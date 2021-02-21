@@ -9,7 +9,7 @@
         <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@1.0.0"> </script>
         <script src="https://unpkg.com/webcam-easy/dist/webcam-easy.min.js"></script>
 
-        <title>Image Classifier</title>
+        <title>Video Classifier</title>
     </head>
 
     <body>
@@ -81,13 +81,10 @@
                         
                         for (let i=0; i<myPs.length; i++){
                             myPs[i].remove();
-                            console.log('remove');
                         }
 
                         mobilenet.load().then(model => {
                         model.classify(webcamElement).then(predictions => {
-                        console.log('Predictions: ');
-                        console.log(predictions);
                         
                         let sumProbability = 0;
                         for (let i=0; i<predictions.length; i++){

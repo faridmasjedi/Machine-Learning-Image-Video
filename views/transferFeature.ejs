@@ -7,7 +7,7 @@
     <script src="https://unpkg.com/ml5@latest/dist/ml5.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.2.0/p5.min.js"></script>
     <link rel="stylesheet" href="/css/style.css">
-    <title>Document</title>
+    <title>Transfer Feature</title>
 </head>
 <body>
     <div id="container">
@@ -21,7 +21,7 @@
                 <a href="videoClassifier">Video Classifier</a>
                 <a href="imageDetection">Image Classifer</a>
                 <a href="objDetectVideo">Video Object Detection</a>
-                <a href="objectDetection.ejs">Image Object Detection</a>
+                <a href="objectDetection">Image Object Detection</a>
                 <a href="transferFeatureReg">Transfer Feature Regression</a>
             </nav>
         </header>
@@ -121,28 +121,28 @@
         }
 
 
-        const gotDetection = (err, res) => {
+        const gotDetection = async (err, res) => {
 
-            let myPs = document.getElementsByTagName('p');
-            for (i=0; i<myPs.length; i++){
-                myPs[i].remove();
-            }
+            await deleteP();
 
             if (err) console.log(err);
-            console.log(res[0]);
-            console.log(classifierFlagStop)
-            let myP = createP(res[0].label);
+            let myP = await createP(res[0].label);
             myP.parent('predictions')
-
             if (!classifierFlagStop) {
-                classifier.classify(gotDetection);    
+                await classifier.classify(gotDetection);    
             }
         }
 
         function draw(){
             videoReady();
         }
-
+        const deleteP = () => {
+            let divP = document.getElementById('predictions');
+            divP.remove();
+            let divNew = document.createElement('div');
+            divNew.setAttribute('id','predictions');
+            document.getElementById('container').appendChild(divNew);
+        }
       </script>
 </body>
 </html>
