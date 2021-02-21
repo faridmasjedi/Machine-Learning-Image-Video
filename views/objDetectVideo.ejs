@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.2.0/p5.min.js"></script>
+    <script src="https://unpkg.com/ml5@latest/dist/ml5.min.js"></script>
+    <link rel="stylesheet" href="/css/style.css">
+    <title>Document</title>
+</head>
+<body>
+    <div id="container">
+        <header>
+            <h1>Machine Learning</h1>
+            <nav>
+                <a href="/">Home</a>
+            </nav>
+            <br>
+            <nav>
+                <a href="videoClassifier">Video Classifier</a>
+                <a href="imageDetection">Image Classifer</a>
+                <a href="objectDetection">Object Detection (Image)</a>
+                <a href="transferFeature">Transfer Feature</a>
+                <a href="transferFeatureReg">Transfer Feature Regression</a>
+            </nav>
+        </header>
+        
+        <div id='description'>
+            <p>- Using coco-ssd model of ml5.js library (a library made from tensorflow library)
+                to make classification of objects in a video. The point is tensorflow library has limited classification and it may give us a wrong answer -
+            </p>
+            <p>
+                - p5.js is a library that has been used to create canvas, images, videos and ... easily -
+            </p>
+            <p>
+                - We can use Transfer Feature to make our own classification -
+            </p>
+            <p>
+                - By clicking on Start button, the classification is going to start -
+            </p>
+            <p>
+                - By clicking on Stop button, it will be stopped -
+            </p>
+        </div>
+
+        <button id="btn">Start</button>
+        <button id="stop">Stop</button>
+        <br><br>
+    </div>
+    
+    <script>
+        let video;
+        let detector;
+        let stopFlag = true;
+        let start = document.getElementById('btn');
+        let stopBtn = document.getElementById('stop');
+        
+        function preload(){
+            detector = ml5.objectDetector('cocossd');
+        }
+        
+        async function setup(){
+            let myCanvas = createCanvas(640,480);
+            myCanvas.parent('container');
+            background(0);
+
+            canvas = document.getElementById('canvas')
+            video = await createCapture(VIDEO, videoReady);
+            video.hide();
+            await detector.detect(video, gotResult);
+        }
+        
+        function draw() {
+            videoReady();
+        }
+        
+        const videoReady = () => image(video,0,0);
+        const gotResult = (err, res) => {
+            if (err) {
+                console.log(err);
+            }
+            if (res) {
+                if (!stopFlag){
+                    res.forEach( (object, index) => {
+        
+                        let {x, y, width, height, label} = object;
+                        stroke(0,255,0);
+                        strokeWeight(2);
+                        noFill();
+                        rect(x,y,width,height);
+
+                        noStroke();
+                        fill("greenyellow");
+                        textSize(24);
+                        text( label, x+10, y+24);
+                    })
+                }
+                
+            }
+            detector.detect(video, gotResult)
+        }
+
+        start.addEventListener('click', () => stopFlag = false);
+        stopBtn.addEventListener('click', () => stopFlag = true);
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/ml5@latest/dist/ml5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.2.0/p5.min.js"></script>
+    <link rel="stylesheet" href="/css/style.css">
+    <title>Document</title>
+</head>
+<body>
+    <div id="container">
+        <header>
+            <h1>Machine Learning</h1>
+            <nav>
+                <a href="/">Home</a>
+            </nav>
+            <br>
+            <nav>
+                <a href="videoClassifier">Video Classifier</a>
+                <a href="imageDetection">Image Classifer</a>
+                <a href="objDetectVideo">Video Object Detection</a>
+                <a href="objectDetection.ejs">Image Object Detection</a>
+                <a href="transferFeature">Transfer Feature </a>
+            </nav>
+        </header>
+        
+        <div id='description'>
+            <p>- Using mobilenet model of ml5.js library (a library made from tensorflow library)
+                as you can chase an object by taking different images of an object in different positions -
+            </p>
+            <p>
+                - p5.js is a library that has been used to create canvas, images, videos and ... easily -
+            </p>
+            <p>
+                - You need to take different images of an object in different positions. You can assign the positions by sliding the bar of each position -
+            </p>
+            <p>
+                - After you took all the images, just press 'Train' button. After a while, the model will be trained and it will chase the object movement -
+            </p>
+            <p>
+                - By clicking on Stop button, it will be stopped -
+            </p>
+            <p>
+                - By clicking on Start button, it will be Started again -
+            </p>
+        </div>
+
+        <div id="class"></div>
+        <div id="trainBtn"></div>
+        <div id="addCanvas"></div>
+    </div>
+    <script>
+        let video;
+        let detector;
+        let regressor;
+        let slider;
+        let trainButton;
+        let imgButton;
+        let value=0;
+
+        let sliderY;
+        let valueY=0;
+        let detectorY;
+        let stopFlag = false;
+
+        function preload() {
+            detector = ml5.featureExtractor('MobileNet', modelReady);
+            detectorY = ml5.featureExtractor('MobileNet', modelReady);
+        }
+
+        function setup(){
+            let myCanvas = createCanvas(640,480);
+            myCanvas.parent('addCanvas');
+
+            video = createCapture(VIDEO, videoReady)
+            video.hide();
+
+            regressor = detector.regression(video, gotReady)
+            regressorY = detectorY.regression(video, gotReady)
+            
+            let spanX = createSpan('Position X')
+            slider = createSlider(0,1,0.5,0.01);
+            slider.input(sliderHandler);
+            spanX.parent('class');
+            slider.parent('class');
+            
+            let spanY = createSpan(' Position Y')
+            sliderY = createSlider(0,1,0.5,0.01);
+            sliderY.input(sliderYHandler);
+            spanY.parent('class');
+            sliderY.parent('class');
+
+            imgButton = createButton('Add Image');
+            imgButton.mousePressed(addImages);
+            imgButton.parent('class');
+
+            trainButton = createButton('Train');
+            trainButton.mousePressed(trainModel);
+            trainButton.parent('trainBtn');
+
+            stopButton = createButton('Stop');
+            stopButton.mousePressed( () => stopFlag = true)
+            stopButton.parent('trainBtn');
+
+            startButton = createButton('Start');
+            startButton.parent('trainBtn');
+            startButton.mousePressed( () => {
+                stopFlag = false;
+                regressor.predict(gotDetection);
+                regressorY.predict(gotDetectionY)
+            });
+        }
+
+        const modelReady = () => console.log('model ready');
+        const videoReady = () => image(video, 0 , 0, 640, 480);
+        const gotReady = () => console.log('video ready')
+        const addImages = () => {
+            regressor.addImage(slider.value())
+            regressorY.addImage(sliderY.value())
+        };
+
+        const trainModel = () => {
+            regressor.train(whileTraining);
+            regressorY.train(whileTrainingY);
+        };
+
+        const whileTraining = (loss) => {
+            if (loss === null){
+                console.log('Training Complete');
+                regressor.predict(gotDetection)
+            }else{
+                console.log(loss);
+            }
+        }
+        const whileTrainingY = (loss) => {
+            if (loss === null){
+                console.log('Training Complete');
+                regressorY.predict(gotDetectionY)
+            }else{
+                console.log(loss);
+            }
+        }
+
+        const gotDetection = (err, res) => {
+            if (err) console.log(err);
+            value = res.value;
+            if (!stopFlag){
+                regressor.predict(gotDetection);    
+            }
+
+        }
+        const gotDetectionY = (err, res) => {
+            if (err) console.log(err);
+            valueY = 1 - res.value;
+            if (!stopFlag){
+                regressorY.predict(gotDetectionY);
+            }
+
+        }
+
+        const sliderHandler = () => console.log(slider.value());
+        const sliderYHandler = () => console.log(sliderY.value());
+
+        function draw(){
+            videoReady();
+            rectMode(CENTER);
+            fill('greenyellow');
+            rect(value*width, height*valueY , 25, 25)
+        }
+      </script>
+</body>
+</html>

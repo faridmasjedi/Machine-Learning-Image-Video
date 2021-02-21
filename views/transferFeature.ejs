@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/ml5@latest/dist/ml5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.2.0/p5.min.js"></script>
+    <link rel="stylesheet" href="/css/style.css">
+    <title>Document</title>
+</head>
+<body>
+    <div id="container">
+        <header>
+            <h1>Machine Learning</h1>
+            <nav>
+                <a href="/">Home</a>
+            </nav>
+            <br>
+            <nav>
+                <a href="videoClassifier">Video Classifier</a>
+                <a href="imageDetection">Image Classifer</a>
+                <a href="objDetectVideo">Video Object Detection</a>
+                <a href="objectDetection.ejs">Image Object Detection</a>
+                <a href="transferFeatureReg">Transfer Feature Regression</a>
+            </nav>
+        </header>
+
+        <div id='description'>
+            <p>- Using mobilenet model of ml5.js library (a library made from tensorflow library)
+                to make new classification of any objects that you want in a video -
+            </p>
+            <p>
+                - p5.js is a library that has been used to create canvas, images, videos and ... easily -
+            </p>
+            <p>
+                - For any object that you want, you need to write a class name in an input and add images of that by clicking 'Add Image' button -
+            </p>
+            <p>
+                - For a new object, just write a new class name and add images of that by clicking 'Add image' button -
+            </p>
+            <p>
+                - After you took all the images, just press 'Train' button. After a while, your classification for the objects will be shown -
+            </p>
+            <p>
+                - By clicking on Stop button, it will be stopped -
+            </p>
+            <p>
+                - By clicking on Start button, it will be Started again -
+            </p>
+        </div>
+
+        <br>
+        <div id="class"></div>
+        <div id="trainBtn"></div>
+        <div id="addCanvas"></div>
+        <div id="predictions"></div>
+    </div>
+    <script>
+        let video;
+        let detector;
+        let classifier;
+        let imgButton;
+        let imgLabel;
+        let trainButton;
+        let classifierFlagStop = false;
+
+        function preload() {
+            detector = ml5.featureExtractor('MobileNet', modelReady);
+        }
+
+        function setup(){
+            let myCanvas = createCanvas(640,480);
+            myCanvas.parent('addCanvas');
+            background(0);
+
+            video = createCapture(VIDEO, videoReady)
+            video.hide();
+            classifier = detector.classification(video, gotReady)
+            let span = createSpan('Enter a class name ')
+            imgLabel = createInput();
+            imgButton = createButton('Add Image');
+            imgButton.mousePressed(addImages);
+
+            span.parent('class');
+            imgLabel.parent('class');
+            imgButton.parent('class');
+
+            trainButton = createButton('Train');
+            trainButton.mousePressed(trainModel);
+            trainButton.parent('trainBtn');
+            
+            stopButton = createButton('Stop');
+            stopButton.mousePressed( () => classifierFlagStop = true )
+            stopButton.parent('trainBtn')
+            
+            stopButton = createButton('Start Again');
+            stopButton.mousePressed( () => {
+                classifierFlagStop = false;
+                classifier.classify(gotDetection)
+            })
+            stopButton.parent('trainBtn')
+        }
+
+        const mobilenetReady = () => console.log('mobilenet is ready');
+        const modelReady = () => console.log('model ready');
+        const videoReady = () => image(video, 0 , 0, 640, 480);
+        const gotReady = () => console.log('video ready')
+        const addImages = () => classifier.addImage(imgLabel.value());
+        const trainModel = () => {
+            classifierFlagStop = false;
+            classifier.train(whileTraining);
+        }
+        const whileTraining = (loss) => {
+            if (loss === null){
+                console.log('Training Complete');
+                classifier.classify(gotDetection)
+            }else{
+                console.log(loss);
+            }
+        }
+
+
+        const gotDetection = (err, res) => {
+
+            let myPs = document.getElementsByTagName('p');
+            for (i=0; i<myPs.length; i++){
+                myPs[i].remove();
+            }
+
+            if (err) console.log(err);
+            console.log(res[0]);
+            console.log(classifierFlagStop)
+            let myP = createP(res[0].label);
+            myP.parent('predictions')
+
+            if (!classifierFlagStop) {
+                classifier.classify(gotDetection);    
+            }
+        }
+
+        function draw(){
+            videoReady();
+        }
+
+      </script>
+</body>
+</html>

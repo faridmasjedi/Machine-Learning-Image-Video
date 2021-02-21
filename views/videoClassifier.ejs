@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="/css/style.css">
+        <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.0.1"> </script>
+        <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@1.0.0"> </script>
+        <script src="https://unpkg.com/webcam-easy/dist/webcam-easy.min.js"></script>
+
+        <title>Image Classifier</title>
+    </head>
+
+    <body>
+        <div id="container">
+            <header>
+                <h1>Machine Learning</h1>
+                <nav>
+                    <a href="/">Home</a>
+                </nav>
+                <br>
+                <nav>
+                    <a href="imageClassifier">Imgae Classifier</a>
+                    <a href="objectDetection">Image Object Detection</a>
+                    <a href="objDetectVideo">Video Object Detection</a>
+                    <a href="transferFeature">Transfer Feature</a>
+                    <a href="transferFeatureReg">Transfer Feature Regression</a>
+                </nav>
+            </header>
+
+            <div id='description'>
+                <p>- Using mobilenet model of tensorflow library to make classification of a video. It      will give us some prediction of a video in every 2 seconds -
+                </p>
+                <p>
+                    - A library named webcam-easy has been used to run the webcan and give us a video out of that -
+                </p>
+                <p>
+                    - For any object that you want, you need to write a class name in an input and add images of that by clicking 'Add Image' button -
+                </p>
+                <p>
+                    - The point is tensorflow library has limited classification and it may give us a wrong answer -
+                </p>
+                <p>
+                    - By clicking on Predict button, it will start prediction -
+                </p>
+                <p>
+                    - By clicking on Stop button, it will be Stopped -
+                </p>
+            </div>
+            <button id="btn">Predict</button>
+            <button id="stop">Stop</button><br/><br/>
+            <video id="webcam" autoplay playsinline width="640" height="480"></video>
+            <canvas id="canvasVideo" class="d-none"></canvas>
+            <div id="predictions"></div>
+
+        </div>
+
+        <script>
+            let btn = document.getElementById('btn');
+            let btnStop = document.getElementById('stop');
+            let input = document.getElementById('input');
+            let stopFlag = true;
+            const webcamElement = document.getElementById('webcam');
+            const canvasElement = document.getElementById('canvas');
+            const snapSoundElement = document.getElementById('snapSound');
+            const webcam = new Webcam(webcamElement, 'user', canvasElement, snapSoundElement);            
+            let myP = document.getElementById('predict');
+
+            btn.addEventListener('click', () => {
+                stopFlag = !stopFlag;
+                webcamElement.style.display = 'block';
+                webcam.start()
+                .then(result =>{
+                    console.log("webcam started");
+                    let interval = setInterval(() => {
+                        if (stopFlag) {
+                            clearInterval(interval)
+                        }else{
+                            let myPs = document.querySelectorAll('p');
+                        
+                        for (let i=0; i<myPs.length; i++){
+                            myPs[i].remove();
+                            console.log('remove');
+                        }
+
+                        mobilenet.load().then(model => {
+                        model.classify(webcamElement).then(predictions => {
+                        console.log('Predictions: ');
+                        console.log(predictions);
+                        
+                        let sumProbability = 0;
+                        for (let i=0; i<predictions.length; i++){
+                            let myP = document.createElement('p');
+                            let {className, probability} = predictions[i];
+                            
+
+                            probability = (i === predictions.length-1 && Math.floor(probability*100)<1 ) ?  100 - sumProbability : Math.floor(probability*100);
+                            sumProbability += probability;
+
+                            myP.innerText = `Prediction: ${className} - Probability: ${probability} %`;
+                            document.getElementById('predictions').appendChild(myP);
+                        }
+                        });
+                        })
+                        }
+                        
+                    },2000)
+                    
+                })
+                .catch(err => {
+                    console.log(err);
+                });
+
+            })
+            
+            btnStop.addEventListener('click',() => stopFlag = !stopFlag)
+            
+        </script>
+    </body>
+</html>

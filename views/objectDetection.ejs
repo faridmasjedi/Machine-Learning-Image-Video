@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"> </script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"> </script>
+
+    <title>Document</title>
+</head>
+<body>
+    <div id="container">
+        <header>
+            <h1>Machine Learning</h1>
+            <nav>
+                <a href="/">Home</a>
+            </nav>
+            <br>
+            <nav>
+                <a href="videoClassifier">Video Classifier</a>
+                <a href="imageDetection">Image Classifer</a>
+                <a href="objDetectVideo">Video Object Detection </a>
+                <a href="transferFeature">Transfer Feature</a>
+                <a href="transferFeatureReg">Transfer Feature Regression</a>
+            </nav>
+        </header>
+
+        <div id='description'>
+            <p>- Using coco-ssd model of tensorflows library to make classification of objects in an image.
+                The point is tensorflow library has limited classification and it may give us a wrong answer -
+            </p>
+            <p>
+                - We can use Transfer Feature to make our own classification -
+            </p>
+            <p>
+                - You can choose if you want to predict on an image by giving a link or
+                on an image on your own computer -
+            </p>
+            <p>
+                - If you have chosen to predict an image by a link, You need to consider that maybe 
+                the link does not give us the access to that image -
+            </p>
+        </div>
+
+        <select id="select">
+            <option value="net">From Internet</option>
+            <option value="pc">From your computer</option>
+        </select>
+
+        <button id="choose">Choose</button>
+        <input type="file" style='display:none;'/>
+        <input id="url" style='display:none;'/>
+        <button id="predict" style='display:none;'>Predict</button><br/><br/>
+        <img id="img" crossorigin="anonymous"/>
+        <canvas id="canvas" width="640" height="480"></canvas>
+        <img id="imgDetect" crossorigin="anonymous"/>
+        <div id="predictions"></div>
+
+    </div>
+
+    <script>
+        let img = document.getElementById('imgDetect');
+        let btn = document.getElementById('predict');
+        let input = document.getElementById('url');
+        let myCanvas = document.getElementById('canvas');
+        let myContext = myCanvas.getContext('2d');
+        let container = document.getElementById('container');
+        let pDiv = document.getElementById('predictions');
+        let select = document.getElementById('select');
+        let chooseBtn = document.getElementById('choose');
+        let imgBrowser = document.querySelector('input[type="file"]')
+
+        let imgOnCanvas = new Image();        
+        let trying = 0;
+        let mappingX, mappingY;
+
+        chooseBtn.addEventListener('click', () => {
+            if (select.value === 'pc'){
+                input.style.display = 'none';
+                btn.style.display = 'none';
+                imgBrowser.style.display = 'block';
+            }else{
+                input.style.display = 'block';
+                btn.style.display = 'block';
+                imgBrowser.style.display = 'none';
+            }
+        })
+
+        imgBrowser.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                img.src = URL.createObjectURL(this.files[0]);
+                imgOnCanvas.src = URL.createObjectURL(this.files[0]);
+            }
+        })
+
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            imgOnCanvas.src = input.value;
+            img.src = input.value;
+        })
+
+        imgOnCanvas.onload = () => {
+            deletePs();
+
+            if (imgOnCanvas.width === 0) {
+                corsP();
+            }else if (img.width !== 0) {
+                trying = 0;
+                scale();
+                cocoSsd.load().then( model => modelCOCOSSD(model) );
+            }else{
+                tryAgain();
+            }
+        }
+
+        const deletePs = () => {
+            let myPs = document.querySelectorAll('p');
+            for (i=0; i< myPs.length; i++){
+                myPs[i].remove();
+            }
+        }
+
+        const corsP = () => {
+            let myP = document.createElement('p');
+            myP.innerText = `There is a CORS problem to use this image. Try another Image.`;
+            pDiv.appendChild(myP);
+        }
+        
+        const tryAgain = () => {
+            let myP = document.createElement('p');
+            if ( img.width === 0 && trying === 0) {
+                myP.innerText = `Try it again. Press the button again`;
+                trying++;
+            }else{
+                myP.innerText = `There is a CORS problem to use this image. Try another Image.`;
+                trying = 0;
+            }
+            pDiv.appendChild(myP);
+        }
+
+        const modelCOCOSSD = (model) => {
+            model.detect(img).then( predictions => {
+                if (predictions.length === 0){
+                    let myP = document.createElement('p');
+                    myP.innerText = `No prediction is available`;
+                    pDiv.appendChild(myP);
+                }else{
+                    for (i=0; i<predictions.length; i++){
+                        let myP = document.createElement('p');
+                        let {score, bbox} = predictions[i];
+                        let pred = predictions[i].class;
+
+                        myP.innerText = `${i+1}. Prediction: ${pred} - Probability: ${Math.floor(score*100)} %`;
+                        pDiv.appendChild(myP);
+
+                        myContext.beginPath();
+                        myContext.rect(bbox[0]*mappingX,bbox[1]*mappingY,bbox[2]*mappingX,bbox[3]*mappingY);
+                        myContext.stroke();
+                        myContext.font="15px Arial";
+                        myContext.fillStyle = "greenyellow";
+                        myContext.fillText(i+1, bbox[0]*mappingX+5, bbox[1]*mappingY+15);
+                    }
+                }
+                    
+            })
+        }
+
+        const scale = () => {
+            myContext.drawImage(img, 0, 0, 640, 480);
+            mappingX = 640/img.width;
+            mappingY = 480/img.height;
+        }
+    </script>
+</body>
+</html>

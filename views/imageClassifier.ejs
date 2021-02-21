@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="/css/style.css">
+        <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.0.1"> </script>
+        <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@1.0.0"> </script>
+        <title>Image Classifier</title>
+    </head>
+
+    <body>
+        <div id="container">
+            <header>
+                <h1>Machine Learning</h1>
+                <nav>
+                    <a href="/">Home</a>
+                </nav>
+                <br>
+                <nav>
+                    <a href="videoClassifier">Video Classifier</a>
+                    <a href="objectDetection">Image Object Detection</a>
+                    <a href="objDetectVideo">Video Object Detection</a>
+                    <a href="transferFeature">Transfer Feature</a>
+                    <a href="transferFeatureReg">Transfer Feature Regression</a>
+                </nav>
+            </header>
+            
+            <div id='description'>
+                <p>- Using Mobilenet model of tensorflows library to make a classification for an image.
+                    The point is tensorflow library has limited classification and it may give us a wrong answer -
+                </p>
+                <p>
+                    - We can use Transfer Feature to make our own classification -
+                </p>
+                <p>
+                    - You can choose if you want to predict on an image by giving a link or
+                    on an image on your own computer -
+                </p>
+                <p>
+                    - If you have chosen to predict an image by a link, You need to consider that maybe 
+                    the link does not give us the access to that image -
+                </p>
+            </div>
+
+            <select id="select">
+                <option value="net">From Internet</option>
+                <option value="pc">From your computer</option>
+            </select>
+            <button id="choose">Choose</button>
+            <input type="file" style='display:none;'/>
+            <input id="input" style='display:none;'/>
+            <button id="btn" style='display:none;'>Predict</button><br/><br/>
+            <img id="img" crossorigin="anonymous"/>
+            <div id="predictions"></div>
+        </div>
+
+        <script>
+            let btn = document.getElementById('btn');
+            let input = document.getElementById('input');
+            let imgBrowser = document.querySelector('input[type="file"]')
+            let img = document.getElementById('img');
+            let myP = document.getElementById('predict');
+            let select = document.getElementById('select');
+            let chooseBtn = document.getElementById('choose');
+
+            chooseBtn.addEventListener('click', () => {
+                if (select.value === 'pc'){
+                    input.style.display = 'none';
+                    btn.style.display = 'none';
+                    imgBrowser.style.display = 'block';
+                }else{
+                    input.style.display = 'block';
+                    btn.style.display = 'block';
+                    imgBrowser.style.display = 'none';
+                }
+            })
+
+            imgBrowser.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    img.src = URL.createObjectURL(this.files[0]);
+                }
+            })
+        
+
+            btn.addEventListener('click', () => {
+                img.src = input.value;
+            })
+            
+            img.addEventListener('load', () => {
+                deletePs();
+                mobileNet();
+            });
+
+            const deletePs = () => {
+                let myPs = document.querySelectorAll('p');
+                for (let i=0; i<myPs.length; i++){
+                    myPs[i].remove();
+                    console.log('remove');
+                }
+            }
+
+            const predictiosRecieved = (pred) => {
+                console.log('Predictions: ');
+                console.log(pred);
+                
+                let sumProbability = 0;
+                for (let i=0; i<pred.length; i++){
+                    let myP = document.createElement('p');
+                    let {className, probability} = pred[i];
+                    
+                    let prob = Math.floor(probability*100);
+                    probability = (prob < 1) ? "< 1" : prob;
+                    myP.innerText = `Prediction: ${className} - Probability: ${probability} %`;
+                    document.getElementById('predictions').appendChild(myP);
+                }
+            }
+
+            const mobileNet = () => {
+                mobilenet.load()
+                .then(model => {
+                    model.classify(img).then(predictions => predictiosRecieved(predictions));
+                });
+            }
+        </script>
+    </body>
+</html>
