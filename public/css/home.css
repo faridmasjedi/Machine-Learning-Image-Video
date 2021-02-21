@@ -30,7 +30,7 @@ h1 {
 #nav div {
   border: 1px solid black;
   width: 30%;
-  height: 150px;
+  min-height: 160px;
   display: inline-block;
   vertical-align: top;
   margin-top: 10px;
